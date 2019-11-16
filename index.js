@@ -5,17 +5,32 @@ const HTML5ToPDF = require("html5-to-pdf")
 const path = require("path")
 
 inquirer
-  .prompt({
+  .prompt([{
     message: "Enter your GitHub username:",
     name: "username"
-  })
-  .then(function({ username }) {
-    const queryUrl = `https://api.github.com/users/${username}/repos?per_page=100`;
+  },
+  {
+    type: "input",
+    message: "What is your favorite color?",
+    name: "color"
+  }])
+  .then(function(response) {
+    const queryUrl = `https://api.github.com/users/${response.username}`;
     axios.get(queryUrl).then(function(res) {
-      const repoNames = res.data.map(function(repo) {
-        return repo.name;
-      });
-      const repoNamesStr = repoNames.join("\n");
+      const colorName = response.color;
+      const profileImg = res.data.avatar_url;
+      const userName = res.data.login;
+      const profileUrl = res.data.html_url;
+      const userBlog = res.data.blog;
+      const userBio = res.data.bio;
+      const publicRepos = res.data.public_repos;
+      const followers = res.data.followers;
+      const following = res.data.following;
+      const userLocation = res.data.location;
+      //const repoNames = res.data.map(function(repo) {
+        //return repo.name;
+      //})
+      //const repoNamesStr = repoNames.join("\n");
       return htmlStr = `
 <!DOCTYPE html>
 <html>
@@ -36,32 +51,39 @@ inquirer
 		}
 	</style>
  </head>
-<body>
+<body style='background-color: ${colorName}';>
+<button onclick="generate()" style='color: blue';>Click to Generate PDF</button>
     <div id="html-2-pdfwrapper" style='position: absolute; left: 20px; top: 50px; bottom: 0; overflow: auto; width: 600px;'>
+    <h1>Html2Pdf: <br /> Save & Print GitHub Profile</h1>
+        <div>Welcome to <span class="username">${userName}</span>'s GitHub Information</div>
+        <div><a href="${profileUrl}">Click here</a> to visit ${userName}'s GitHub profile.</div>
 
-    <h1>Html2Pdf: <br /> Save & Print Your Github Repositories</h1>
-
-        <p><div>${repoNamesStr}</div>	</p>
-        <button onclick="generate()" style='color: blue';>Click to Generate PDF</button>
-		
+    <div class="left">
+      <h3>About <span class="username">${userName}</span>: </h3>
+      <div>Location: <a href="https://www.google.com/maps/place/${userLocation}">${userLocation}</a></div>
+      <div>Personal Site: <a href="${userBlog}">Click Here.</a></div>
+      <div>Bio: ${userBio}</div>
+    </div>
+    <div class="left">
+    <h3>About <span class="username">${userName}</span>'s GitHub profile: </h3>
+    <div>Number of public repositories: ${publicRepos} </div>
+    <div>Number of followers: ${followers} </div>
+    <div>Number following: ${following} </div>
+    <div>Number of GitHub stars: </div>		
 		
 </div>
-
 <script src='dist/jspdf.min.js'></script>
-
 <script>
 var base64Img = null;
 imgToBase64('octocat.jpg', function(base64) {
     base64Img = base64; 
 });
-
 margins = {
   top: 70,
   bottom: 40,
   left: 30,
   width: 550
 };
-
 generate = function()
 {
     var pdf = new jsPDF('p', 'pt', 'a4');
@@ -94,7 +116,6 @@ function headerFooterFormatting(doc, totalPages)
         doc.page++;
     }
 };
-
 function header(doc)
 {
     doc.setFontSize(30);
@@ -109,7 +130,6 @@ function header(doc)
 	doc.setLineCap(2);
 	doc.line(3, 70, margins.width + 43,70); // horizontal line
 };
-
 function imgToBase64(url, callback, imgVariable) {
  
     if (!window.FileReader) {
@@ -129,16 +149,13 @@ function imgToBase64(url, callback, imgVariable) {
     xhr.open('GET', url);
     xhr.send();
 };
-
 function footer(doc, pageNumber, totalPages){
-
     var str = "Page " + pageNumber + " of " + totalPages
    
     doc.setFontSize(10);
     doc.text(str, margins.left, doc.internal.pageSize.height - 20);
     
 };
-
  </script>
 </body>
 </html>
