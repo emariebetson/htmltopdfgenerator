@@ -18,6 +18,7 @@ inquirer
     const queryUrl = `https://api.github.com/users/${response.username}`;
     axios.get(queryUrl).then(function(res) {
       const colorName = response.color;
+      const id = res.data.id;
       const profileImg = res.data.avatar_url;
       const userName = res.data.login;
       const profileUrl = res.data.html_url;
@@ -27,10 +28,7 @@ inquirer
       const followers = res.data.followers;
       const following = res.data.following;
       const userLocation = res.data.location;
-      //const repoNames = res.data.map(function(repo) {
-        //return repo.name;
-      //})
-      //const repoNamesStr = repoNames.join("\n");
+      //profile image breaks pdf rendering; tried sep <div> in header, footer, iframe, modal, needs URI vs URL
       return htmlStr = `
 <!DOCTYPE html>
 <html>
@@ -49,14 +47,16 @@ inquirer
 			page-break-inside: avoid;
 			clear:both;
 		}
-	</style>
- </head>
+  </style>
+  </head>
 <body style='background-color: ${colorName}';>
 <button onclick="generate()" style='color: blue';>Click to Generate PDF</button>
     <div id="html-2-pdfwrapper" style='position: absolute; left: 20px; top: 50px; bottom: 0; overflow: auto; width: 600px;'>
     <h1>Html2Pdf: <br /> Save & Print GitHub Profile</h1>
         <div>Welcome to <span class="username">${userName}</span>'s GitHub Information</div>
         <div><a href="${profileUrl}">Click here</a> to visit ${userName}'s GitHub profile.</div>
+        <div><a href="${profileImg}">Click for Avatar</a></div>
+
 
     <div class="left">
       <h3>About <span class="username">${userName}</span>: </h3>
@@ -160,41 +160,27 @@ function footer(doc, pageNumber, totalPages){
 </body>
 </html>
 `;
-    })
-    .then(htmlStr => {
-      fs.writeFile("index.html", htmlStr, () => {
-      });
-    })
-    .then(() => {
-      /* read the file from filesystem */
-      /* convert to pdf */
-      const run = async () => {
-        const html5ToPDF = new HTML5ToPDF({
-          inputPath: path.join(__dirname, "index.html"),
-          outputPath: path.join(__dirname, "page.pdf"),
-          options: { printBackground: true }
-        });
-        generate = function()
-{
-  var pdf = new jsPDF('p', 'pt', 'a4');
-  pdf.setFontSize(18);
-  pdf.fromHTML(document.getElementById('html-2-pdfwrapper'), 
-    margins.left, // x coord
-    margins.top,
-    {
-      // y coord
-      width: margins.width// max width of content on PDF
-    },function(dispose) {
-      headerFooterFormatting(pdf)
-    }, 
-    margins);
-    
-  var iframe = document.createElement('iframe');
-  iframe.setAttribute('style','position:absolute;right:0; top:0; bottom:0; height:100%; width:650px; padding:20px;');
-  document.body.appendChild(iframe);
-  
-  iframe.src = pdf.output('datauristring');
-};
-      };
-    });
+;
+})
+.then(htmlStr => {
+  fs.writeFile("index.html", htmlStr, () => {
   });
+})
+.then(() => {
+  /* read the file from filesystem */
+  /* convert to pdf */
+  const run = async () => {
+    const html5ToPDF = new HTML5ToPDF({
+      inputPath: path.join(__dirname, "index.html"),
+      outputPath: path.join(__dirname, "great.pdf"),
+      options: { printBackground: true }
+    });
+    await html5ToPDF.start();
+    await html5ToPDF.build();
+    await html5ToPDF.close();
+    console.log("DONE");
+    process.exit(0);
+  };
+  return run();
+});
+});
